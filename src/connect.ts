@@ -1,5 +1,6 @@
 import * as url from 'node:url'
 import debug from 'debug'
+import { read } from 'read'
 import { Fs } from './fs'
 import { WebDAV } from './webdav'
 import { FTP } from './ftp'
@@ -27,13 +28,21 @@ export interface Connection {
 const getUserName = (server: Server): string | undefined =>
   server.remote.username !== '' ? server.remote.username : undefined
 
-const getPassword = async (server: Server): Promise<string | undefined> => {
+const getPassword = async (
+  username: string | undefined,
+  server: Server
+): Promise<string | undefined> => {
   if (server.password != null) {
     return await server.password()
   } else if (server.remote.password !== '') {
     return server.remote.password
   } else {
-    return undefined
+    return await read({
+      default: '',
+      prompt: `(${username ?? ''}@${server.remote.hostname}) Password: `,
+      silent: true,
+      replace: '*'
+    })
   }
 }
 
@@ -45,7 +54,7 @@ export const connect = async (server: Server): Promise<Connection> => {
   }
   debugConnect(`connecting to ${server.remote.origin}`)
   const username = getUserName(server)
-  const password = await getPassword(server)
+  const password = await getPassword(username, server)
   if (protocol === 'http:' || protocol === 'https:') {
     const remote = new URL(server.remote)
     remote.username = ''
