@@ -3,9 +3,11 @@ import debug from 'debug'
 import { Fs } from './fs'
 import { WebDAV } from './webdav'
 import { FTP } from './ftp'
+import { SFTP } from './sftp'
 
 const debugConnect = debug('distsync:connect')
 const debugFtp = debug('distsync:ftp')
+const debugSftp = debug('distsync:sftp')
 
 interface Server {
   readonly remote: Readonly<URL>
@@ -61,6 +63,16 @@ export const connect = async (server: Server): Promise<Connection> => {
       debug: debugFtp.enabled ? debugFtp : undefined
     })
     return ftp
+  } else if (protocol === 'sftp:') {
+    const sftp = new SFTP(server.remote.pathname)
+    const config1 = {
+      host: server.remote.hostname,
+      username: username ?? '',
+      password: password ?? ''
+    }
+    const config2 = debugSftp.enabled ? { debug: debugSftp } : null
+    await sftp.connect({ ...config1, ...config2 })
+    return sftp
   }
   throw Error(`unsupported protocol: ${server.remote.protocol}`)
 }
