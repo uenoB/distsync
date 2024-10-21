@@ -20,7 +20,7 @@ npm install distsync
 You can write the configuration of distsync in one of the following files
 (see [cosmiconfig] for details):
 * `.distsyncrc`, `.distsyncrc.js`, or `.distsyncrc.json`
-* `distsync.config.js` or `distsync.config.json`
+* `distsync.config.js`
 
 The following is an example of a configuration file:
 
@@ -90,8 +90,16 @@ interface UserRule {
 The absolute URL of the remote directory.
 The following protocol are allowed:
 `file:` (local copy for testing),
-`http:` or `https:` (WebDAV),
-or `ftp:`.
+`http:` and `https:` (WebDAV),
+`sftp:`, and `ftp:`.
+
+### `passwordCommand`
+
+| type | default |
+|------|---------|
+| `string` | (print `Password:` prompt) |
+
+The command that obtains secret password.
 
 ### `indexName`
 
