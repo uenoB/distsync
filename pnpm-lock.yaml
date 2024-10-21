@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@types/node':
-        specifier: ^22.7.7
-        version: 22.7.7
       commander:
         specifier: ^12.1.0
         version: 12.1.0
@@ -51,9 +48,9 @@ importers:
       '@types/micromatch':
         specifier: ^4.0.9
         version: 4.0.9
-      '@types/node-zopfli':
-        specifier: ^2.0.5
-        version: 2.0.5
+      '@types/node':
+        specifier: ^22.7.7
+        version: 22.7.7
       eslint:
         specifier: ^9.13.0
         version: 9.13.0
@@ -729,9 +726,6 @@ packages:
 
   '@types/ms@0.7.34':
     resolution: {integrity: sha512-nG96G3Wp6acyAgJqGasjODb+acrI7KltPiRxzHPXnP3NgI28bpQDRv53olbqGXbfcgF5aiiHmO3xpwEpS5Ld9g==}
-
-  '@types/node-zopfli@2.0.5':
-    resolution: {integrity: sha512-2TzQjZInQz4YEICXOY4Lu5God3aRqEh0UfrumBe4vfVe/9pyQpLwhGohRhodzf60mmPwE4sNJ63lkvpLZdlr1g==}
 
   '@types/node@22.7.7':
     resolution: {integrity: sha512-SRxCrrg9CL/y54aiMCG3edPKdprgMVGDXjA3gB8UmmBW5TcXzRUYAh8EWzTnSJFAd1rgImPELza+A3bJ+qxz8Q==}
@@ -3406,10 +3400,6 @@ snapshots:
       '@types/braces': 3.0.4
 
   '@types/ms@0.7.34': {}
-
-  '@types/node-zopfli@2.0.5':
-    dependencies:
-      '@types/node': 22.7.7
 
   '@types/node@22.7.7':
     dependencies:
