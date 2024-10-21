@@ -2,6 +2,29 @@ import Client from 'ftp'
 
 export type Options = Client.Options
 
+const promise = async <X>(
+  client: Client,
+  body: (ok: (x: X) => void, ng: (x: Error) => void) => void
+): Promise<X> =>
+  await new Promise<X>((resolve, reject) => {
+    const onError = (error: Error): void => {
+      // an accident happened during communication.
+      // except for the case when an unexpected server response has come,
+      // connection is closed by the library.
+      reject(error)
+    }
+    client.once('error', onError)
+    const ok = (x: X): void => {
+      client.removeListener('error', onError)
+      resolve(x)
+    }
+    const ng = (x: Error): void => {
+      client.removeListener('error', onError)
+      reject(x)
+    }
+    body(ok, ng)
+  })
+
 export class FTP {
   private readonly baseURL: Readonly<URL>
   private readonly client: Client
@@ -15,43 +38,18 @@ export class FTP {
     this.client.end()
   }
 
-  private async promise<X>(
-    body: (ok: (x: X) => void, ng: (x: unknown) => void) => void
-  ): Promise<X> {
-    return await new Promise<X>((resolve, reject) => {
-      /* eslint-disable @typescript-eslint/prefer-promise-reject-errors */
-      const onError = (error: unknown): void => {
-        // an accident happened during communication.
-        // except for the case when an unexpected server response has come,
-        // connection is closed by the library.
-        reject(error)
-      }
-      this.client.once('error', onError)
-      const ok = (x: X): void => {
-        this.client.removeListener('error', onError)
-        resolve(x)
-      }
-      const ng = (x: unknown): void => {
-        this.client.removeListener('error', onError)
-        reject(x)
-      }
-      body(ok, ng)
-      /* eslint-enable */
-    })
-  }
-
   async connect(options?: Client.Options): Promise<void> {
-    await this.promise(resolve => {
+    await promise(this.client, resolve => {
       this.client.once('ready', resolve)
       this.client.connect({ secure: true, ...options })
     })
   }
 
   async get(filename: string): Promise<Buffer> {
-    return await this.promise((resolve, reject) => {
+    return await promise(this.client, (resolve, reject) => {
       this.client.get(
         new URL(filename, this.baseURL).pathname,
-        (err: unknown, rs) => {
+        (err: Error | undefined, rs) => {
           if (err != null) {
             reject(err)
           } else {
@@ -62,7 +60,7 @@ export class FTP {
             rs.on('end', () => {
               resolve(Buffer.concat(data))
             })
-            rs.on('error', err => {
+            rs.on('error', (err: Error) => {
               this.client.end()
               reject(err)
             })
@@ -73,11 +71,11 @@ export class FTP {
   }
 
   async put(data: Buffer, filename: string): Promise<void> {
-    await this.promise((resolve, reject) => {
+    await promise(this.client, (resolve, reject) => {
       this.client.put(
         data,
         new URL(filename, this.baseURL).pathname,
-        (err: unknown) => {
+        (err: Error | undefined) => {
           if (err == null) {
             resolve(undefined)
           } else {
@@ -89,10 +87,10 @@ export class FTP {
   }
 
   async mkdir(filename: string): Promise<void> {
-    await this.promise((resolve, reject) => {
+    await promise(this.client, (resolve, reject) => {
       this.client.mkdir(
         new URL(filename, this.baseURL).pathname,
-        (err: unknown) => {
+        (err: Error | undefined) => {
           if (err == null) {
             resolve(undefined)
           } else {
@@ -104,10 +102,10 @@ export class FTP {
   }
 
   async rm(filename: string): Promise<void> {
-    await this.promise((resolve, reject) => {
+    await promise(this.client, (resolve, reject) => {
       this.client.delete(
         new URL(filename, this.baseURL).pathname,
-        (err: unknown) => {
+        (err: Error | undefined) => {
           if (err == null) {
             resolve(undefined)
           } else {
@@ -119,10 +117,10 @@ export class FTP {
   }
 
   async rmdir(filename: string): Promise<void> {
-    await this.promise((resolve, reject) => {
+    await promise(this.client, (resolve, reject) => {
       this.client.rmdir(
         new URL(filename, this.baseURL).pathname,
-        (err: unknown) => {
+        (err: Error | undefined) => {
           if (err == null) {
             resolve(undefined)
           } else {
@@ -136,15 +134,18 @@ export class FTP {
   async chmod(filename: string, mode: number): Promise<void> {
     filename = new URL(filename, this.baseURL).pathname
     const command = `CHMOD ${mode.toString(8)} ${filename}`
-    const [text, code] = await this.promise<[string, number]>((ok, ng) => {
-      this.client.site(command, (err: unknown, text, code) => {
-        if (err == null) {
-          ok([text, code])
-        } else {
-          ng(err)
-        }
-      })
-    })
+    const [text, code] = await promise<[string, number]>(
+      this.client,
+      (resolve, reject) => {
+        this.client.site(command, (err: Error | undefined, text, code) => {
+          if (err == null) {
+            resolve([text, code])
+          } else {
+            reject(err)
+          }
+        })
+      }
+    )
     if (code !== 200) throw Error(`${code} ${text}`)
   }
 }
