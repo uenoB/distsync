@@ -2,7 +2,7 @@ import * as fs from 'node:fs'
 import * as crypto from 'node:crypto'
 import pc from 'picocolors'
 import type { Config, Source, Rule } from './config'
-import { connect } from './connect'
+import type { Connection } from './connect'
 import { type Data, fromBuffer } from './data'
 import { listFiles } from './files'
 import { brotli, unbrotli } from './brotli'
@@ -58,18 +58,16 @@ interface AssetIndexEntry {
 }
 
 export const remoteAssets = async (
-  config: Config
+  config: Config,
+  conn: Connection
 ): Promise<Map<string, RemoteAsset>> => {
   const assets = new Map<string, RemoteAsset>()
   let raw: Buffer
-  const conn = await connect(config)
   try {
     raw = await conn.get(config.indexName)
   } catch (e) {
     console.warn(`${pc.bold(pc.red('WARN:'))} ${String(e)}`)
     return assets
-  } finally {
-    conn.end()
   }
   let json: unknown
   try {

@@ -1,7 +1,7 @@
 import pc from 'picocolors'
 import type { UploadableAsset } from './asset'
 import type { Config } from './config'
-import { connect } from './connect'
+import type { Connection } from './connect'
 import { loadAssetContent } from './load'
 
 const dummyConn = {
@@ -34,6 +34,7 @@ const compare = (x: string, y: string): number =>
 
 export const updateRemote = async (
   config: Config,
+  connection: Connection,
   assets: ReadonlyMap<string, UploadableAsset>
 ): Promise<void> => {
   const oldFolders = new Set<string>()
@@ -52,37 +53,36 @@ export const updateRemote = async (
   rmdirs.sort(compare).reverse()
   mkdirs.sort(compare)
 
-  const conn = config.dryRun ? dummyConn : await connect(config)
-  try {
-    for (const remoteName of mkdirs) {
-      config.info?.(`${pc.blue('mkdir')} ${remoteName}`)
-      try {
-        await conn.mkdir?.(remoteName)
-      } catch (e) {
-        console.warn(`${pc.red(pc.bold('WARN:'))} ${String(e)}`)
-      }
+  const conn = config.dryRun ? dummyConn : connection
+
+  for (const remoteName of mkdirs) {
+    config.info?.(`${pc.blue('mkdir')} ${remoteName}`)
+    try {
+      await conn.mkdir?.(remoteName)
+    } catch (e) {
+      console.warn(`${pc.red(pc.bold('WARN:'))} ${String(e)}`)
     }
-    for (const [remoteName, asset] of assets) {
-      if (asset.diff === 'update') {
-        config.info?.(`${pc.blue('upload')} ${remoteName}`)
-        await conn.put?.((await loadAssetContent(asset)).buffer, remoteName)
-        const mode = asset.mode.toString(8)
-        config.info?.(`${pc.blue('chmod')} ${mode} ${remoteName}`)
-        await conn.chmod?.(remoteName, asset.mode)
-      } else if (asset.diff === 'remove') {
-        config.info?.(`${pc.blue('rm')} ${remoteName}`)
-        await conn.rm?.(remoteName)
-      }
+  }
+
+  for (const [remoteName, asset] of assets) {
+    if (asset.diff === 'update') {
+      config.info?.(`${pc.blue('upload')} ${remoteName}`)
+      await conn.put?.((await loadAssetContent(asset)).buffer, remoteName)
+      const mode = asset.mode.toString(8)
+      config.info?.(`${pc.blue('chmod')} ${mode} ${remoteName}`)
+      await conn.chmod?.(remoteName, asset.mode)
+    } else if (asset.diff === 'remove') {
+      config.info?.(`${pc.blue('rm')} ${remoteName}`)
+      await conn.rm?.(remoteName)
     }
-    for (const remoteName of rmdirs) {
-      config.info?.(`${pc.blue('rmdir')} ${remoteName}`)
-      try {
-        await conn.rmdir?.(remoteName)
-      } catch (e) {
-        console.warn(`${pc.red(pc.bold('WARN:'))} ${String(e)}`)
-      }
+  }
+
+  for (const remoteName of rmdirs) {
+    config.info?.(`${pc.blue('rmdir')} ${remoteName}`)
+    try {
+      await conn.rmdir?.(remoteName)
+    } catch (e) {
+      console.warn(`${pc.red(pc.bold('WARN:'))} ${String(e)}`)
     }
-  } finally {
-    conn.end?.()
   }
 }

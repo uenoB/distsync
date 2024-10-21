@@ -61,7 +61,6 @@ export class FTP {
               resolve(Buffer.concat(data))
             })
             rs.on('error', (err: Error) => {
-              this.client.end()
               reject(err)
             })
           }
