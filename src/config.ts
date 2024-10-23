@@ -7,7 +7,7 @@ import { type Data, fromBuffer, fromString } from './data'
 import { gzip } from './gzip'
 import { brotli } from './brotli'
 import type { Arrayable, Awaitable, Null } from './util'
-import { isObject, joinURL, toArray } from './util'
+import { isObject, toArray } from './util'
 
 export type Transform = (
   data: Data,
@@ -35,7 +35,7 @@ export interface UserSource {
 }
 
 export interface Source {
-  readonly directory: Readonly<URL>
+  readonly directory: string
   readonly rules: readonly Rule[]
 }
 
@@ -137,17 +137,14 @@ const getRule = (rule: unknown): Rule => {
   }
 }
 
-const resolvePath = (basePath: string, filePath: string): Readonly<URL> =>
-  url.pathToFileURL(path.resolve(basePath, filePath))
-
 const getSource = (basePath: string, source: unknown): Source => {
   if (typeof source === 'string') {
-    return { directory: resolvePath(basePath, source), rules: [] }
+    return { directory: path.resolve(basePath, source), rules: [] }
   } else if (isObject(source)) {
     const directory = source['directory'] ?? 'dist'
     if (typeof directory !== 'string') throw Error('directory must be a string')
     return {
-      directory: resolvePath(basePath, directory),
+      directory: path.resolve(basePath, directory),
       rules: toArray(source['rules']).map(getRule)
     }
   } else {
@@ -157,9 +154,9 @@ const getSource = (basePath: string, source: unknown): Source => {
 
 const getRemote = (basePath: string, dest: unknown): Readonly<URL> => {
   if (dest == null || dest === '') {
-    return joinURL(url.pathToFileURL(path.resolve(basePath, 'distsync')), '')
+    return url.pathToFileURL(path.resolve(basePath, 'distsync'))
   } else if (typeof dest === 'string' || dest instanceof URL) {
-    return joinURL(new URL(dest), '')
+    return new URL(dest)
   } else {
     throw Error('remote must be either a string or URL')
   }

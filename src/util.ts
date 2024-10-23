@@ -19,16 +19,12 @@ export const mergeMap = <K, A extends readonly unknown[]>(
 }
 
 export const normalizePath = (path: string): string => {
-  path = path.replace(/\/+/g, '/')
-  path = path.replace(/%/g, '%25').replace(/\?/g, '%3F').replace(/#/g, '%23')
-  path = new URL(path, 'file:///').pathname.replace(/^\//, '')
-  return path.replace(/%23/g, '#').replace(/%3F/g, '?').replace(/%25/g, '%')
-}
-
-export const joinURL = (url: Readonly<URL>, path: string): URL => {
-  const work = new URL(url)
-  work.pathname = url.pathname.replace(/\/*$/, '/')
-  work.search = ''
-  work.hash = ''
-  return new URL(path, work)
+  let r = path
+  r = r.replace(/\/+/g, '/')
+  r = r.replace(/(^|\/)\.(?=\/|$)/g, '')
+  r = r.replace(/^\/+/, '')
+  while (/(?:^|\/)\.\.(?:\/|$)/.test(r)) {
+    r = r.replace(/(^|\/(?!\.\.(?:\/|$)))(?:^|[^/]+\/)\.\.(?:\/|$)/g, '$1')
+  }
+  return r
 }

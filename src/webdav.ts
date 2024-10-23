@@ -2,8 +2,8 @@ import type { WebDAVClient, WebDAVClientOptions } from 'webdav'
 import { createClient } from 'webdav'
 
 export class WebDAV {
-  static connect(url: string, options?: WebDAVClientOptions): WebDAV {
-    return new WebDAV(createClient(url, options))
+  static connect(url: Readonly<URL>, options?: WebDAVClientOptions): WebDAV {
+    return new WebDAV(createClient(url.href, options))
   }
 
   constructor(private readonly client: WebDAVClient) {}

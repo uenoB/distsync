@@ -1,3 +1,4 @@
+import * as path from 'node:path'
 import Client from 'ftp'
 
 export type Options = Client.Options
@@ -26,11 +27,11 @@ const promise = async <X>(
   })
 
 export class FTP {
-  private readonly baseURL: Readonly<URL>
+  private readonly basePath: string
   private readonly client: Client
 
-  constructor(basePath = '/') {
-    this.baseURL = new URL(basePath, 'file:')
+  constructor(baseURL: Readonly<URL>) {
+    this.basePath = decodeURI(baseURL.pathname)
     this.client = new Client()
   }
 
@@ -48,7 +49,7 @@ export class FTP {
   async get(filename: string): Promise<Buffer> {
     return await promise(this.client, (resolve, reject) => {
       this.client.get(
-        new URL(filename, this.baseURL).pathname,
+        path.posix.join(this.basePath, filename),
         (err: Error | undefined, rs) => {
           if (err != null) {
             reject(err)
@@ -73,7 +74,7 @@ export class FTP {
     await promise(this.client, (resolve, reject) => {
       this.client.put(
         data,
-        new URL(filename, this.baseURL).pathname,
+        path.posix.join(this.basePath, filename),
         (err: Error | undefined) => {
           if (err == null) {
             resolve(undefined)
@@ -88,7 +89,7 @@ export class FTP {
   async mkdir(filename: string): Promise<void> {
     await promise(this.client, (resolve, reject) => {
       this.client.mkdir(
-        new URL(filename, this.baseURL).pathname,
+        path.posix.join(this.basePath, filename),
         (err: Error | undefined) => {
           if (err == null) {
             resolve(undefined)
@@ -103,7 +104,7 @@ export class FTP {
   async rm(filename: string): Promise<void> {
     await promise(this.client, (resolve, reject) => {
       this.client.delete(
-        new URL(filename, this.baseURL).pathname,
+        path.posix.join(this.basePath, filename),
         (err: Error | undefined) => {
           if (err == null) {
             resolve(undefined)
@@ -118,7 +119,7 @@ export class FTP {
   async rmdir(filename: string): Promise<void> {
     await promise(this.client, (resolve, reject) => {
       this.client.rmdir(
-        new URL(filename, this.baseURL).pathname,
+        path.posix.join(this.basePath, filename),
         (err: Error | undefined) => {
           if (err == null) {
             resolve(undefined)
@@ -131,8 +132,8 @@ export class FTP {
   }
 
   async chmod(filename: string, mode: number): Promise<void> {
-    filename = new URL(filename, this.baseURL).pathname
-    const command = `CHMOD ${mode.toString(8)} ${filename}`
+    const filePath = path.posix.join(this.basePath, filename)
+    const command = `CHMOD ${mode.toString(8)} ${filePath}`
     const [text, code] = await promise<[string, number]>(
       this.client,
       (resolve, reject) => {

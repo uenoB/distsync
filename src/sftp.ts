@@ -1,3 +1,4 @@
+import * as path from 'node:path'
 import ssh2 from 'ssh2'
 
 const promise = async <X>(
@@ -21,12 +22,12 @@ const promise = async <X>(
   })
 
 export class SFTP {
-  private readonly baseURL: Readonly<URL>
+  private readonly basePath: string
   private readonly client: ssh2.Client
   private sftp: ssh2.SFTPWrapper | undefined
 
-  constructor(basePath = '/') {
-    this.baseURL = new URL(basePath, 'file:')
+  constructor(baseURL: Readonly<URL>) {
+    this.basePath = decodeURI(baseURL.pathname)
     this.client = new ssh2.Client()
   }
 
@@ -56,8 +57,8 @@ export class SFTP {
 
   async get(filename: string): Promise<Buffer> {
     if (this.sftp == null) throw Error('SFTP connection is not established')
-    const path = new URL(filename, this.baseURL).pathname
-    const stream = this.sftp.createReadStream(path)
+    const filePath = path.posix.join(this.basePath, filename)
+    const stream = this.sftp.createReadStream(filePath)
     const result = []
     for await (const data of stream) result.push(data)
     return Buffer.concat(result)
@@ -65,8 +66,8 @@ export class SFTP {
 
   async put(data: Buffer, filename: string): Promise<void> {
     if (this.sftp == null) throw Error('SFTP connection is not established')
-    const path = new URL(filename, this.baseURL).pathname
-    const stream = this.sftp.createWriteStream(path)
+    const filePath = path.posix.join(this.basePath, filename)
+    const stream = this.sftp.createWriteStream(filePath)
     await new Promise<void>((resolve, reject) => {
       stream.on('close', () => {
         resolve()
@@ -81,7 +82,7 @@ export class SFTP {
   async mkdir(filename: string): Promise<void> {
     await promise(this.client, (resolve, reject) => {
       if (this.sftp == null) throw Error('SFTP connection is not established')
-      this.sftp.mkdir(new URL(filename, this.baseURL).pathname, err => {
+      this.sftp.mkdir(path.posix.join(this.basePath, filename), err => {
         if (err == null) {
           resolve(undefined)
         } else {
@@ -94,7 +95,7 @@ export class SFTP {
   async rm(filename: string): Promise<void> {
     await promise(this.client, (resolve, reject) => {
       if (this.sftp == null) throw Error('SFTP connection is not established')
-      this.sftp.unlink(new URL(filename, this.baseURL).pathname, err => {
+      this.sftp.unlink(path.posix.join(this.basePath, filename), err => {
         if (err == null) {
           resolve(undefined)
         } else {
@@ -107,7 +108,7 @@ export class SFTP {
   async rmdir(filename: string): Promise<void> {
     await promise(this.client, (resolve, reject) => {
       if (this.sftp == null) throw Error('SFTP connection is not established')
-      this.sftp.rmdir(new URL(filename, this.baseURL).pathname, err => {
+      this.sftp.rmdir(path.posix.join(this.basePath, filename), err => {
         if (err == null) {
           resolve(undefined)
         } else {
@@ -120,7 +121,7 @@ export class SFTP {
   async chmod(filename: string, mode: number): Promise<void> {
     await promise(this.client, (resolve, reject) => {
       if (this.sftp == null) throw Error('SFTP connection is not established')
-      this.sftp.chmod(new URL(filename, this.baseURL).pathname, mode, err => {
+      this.sftp.chmod(path.posix.join(this.basePath, filename), mode, err => {
         if (err == null) {
           resolve(undefined)
         } else {

@@ -60,11 +60,11 @@ export const connect = async (server: Server): Promise<Connection> => {
     remote.username = ''
     remote.password = ''
     return WebDAV.connect(
-      remote.href,
+      remote,
       username != null && password != null ? { username, password } : {}
     )
   } else if (protocol === 'ftp:') {
-    const ftp = new FTP(server.remote.pathname)
+    const ftp = new FTP(server.remote)
     await ftp.connect({
       host: server.remote.host,
       user: username,
@@ -73,7 +73,7 @@ export const connect = async (server: Server): Promise<Connection> => {
     })
     return ftp
   } else if (protocol === 'sftp:') {
-    const sftp = new SFTP(server.remote.pathname)
+    const sftp = new SFTP(server.remote)
     const config1 = {
       host: server.remote.hostname,
       username: username ?? '',

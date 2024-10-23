@@ -1,35 +1,38 @@
 import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
+import * as url from 'node:url'
 
 export class Fs {
   static async connect(baseURL: Readonly<URL>): Promise<Fs> {
-    await fs.mkdir(new URL('.', baseURL), { recursive: true })
-    return new Fs(baseURL)
+    const basePath = url.fileURLToPath(baseURL)
+    await fs.mkdir(basePath, { recursive: true })
+    return new Fs(basePath)
   }
 
-  constructor(private readonly baseURL: Readonly<URL>) {}
+  constructor(private readonly basePath: string) {}
 
   async get(filename: string): Promise<Buffer> {
-    return await fs.readFile(new URL(filename, this.baseURL))
+    return await fs.readFile(path.join(this.basePath, filename))
   }
 
   async put(data: Buffer, filename: string): Promise<void> {
-    await fs.writeFile(new URL(filename, this.baseURL), data)
+    await fs.writeFile(path.join(this.basePath, filename), data)
   }
 
   async rm(filename: string): Promise<void> {
-    await fs.rm(new URL(filename, this.baseURL))
+    await fs.rm(path.join(this.basePath, filename))
   }
 
   async mkdir(filename: string): Promise<void> {
-    await fs.mkdir(new URL(filename, this.baseURL))
+    await fs.mkdir(path.join(this.basePath, filename))
   }
 
   async rmdir(filename: string): Promise<void> {
-    await fs.rmdir(new URL(filename, this.baseURL))
+    await fs.rmdir(path.join(this.basePath, filename))
   }
 
   async chmod(filename: string, mode: number): Promise<void> {
-    await fs.chmod(new URL(filename, this.baseURL), mode)
+    await fs.chmod(path.join(this.basePath, filename), mode)
   }
 
   end(): void {}

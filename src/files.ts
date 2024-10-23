@@ -1,5 +1,6 @@
 import * as fs from 'node:fs'
-import { joinURL } from './util'
+import * as path from 'node:path'
+import * as url from 'node:url'
 
 interface ListFilesItem {
   localName: string
@@ -8,20 +9,27 @@ interface ListFilesItem {
 }
 
 export const listFiles = async function* (
-  from: Readonly<URL>
+  directory: string
 ): AsyncGenerator<ListFilesItem> {
-  const rootURL = joinURL(from, '')
-  const stack = [rootURL]
+  const stack = [{ filePath: directory, localName: '' }]
   for (;;) {
-    const fileURL = stack.pop()
-    if (fileURL == null) break
-    const stat = await fs.promises.stat(fileURL)
+    const pair = stack.pop()
+    if (pair == null) break
+    const stat = await fs.promises.stat(pair.filePath)
     if (stat.isDirectory()) {
-      const entries = await fs.promises.readdir(fileURL)
-      entries.reduceRight((_, x) => stack.push(joinURL(fileURL, x)), 0)
+      const entries = await fs.promises.readdir(pair.filePath)
+      for (const i of entries.reverse()) {
+        stack.push({
+          filePath: path.join(pair.filePath, i),
+          localName: path.posix.join(pair.localName, i)
+        })
+      }
     } else {
-      const localName = fileURL.href.slice(rootURL.href.length)
-      yield { localName, fileURL, stat }
+      yield {
+        localName: pair.localName,
+        fileURL: url.pathToFileURL(pair.filePath),
+        stat
+      }
     }
   }
 }
