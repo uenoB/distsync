@@ -14,6 +14,7 @@ export class WebDAV {
     if (typeof r === 'string') return Buffer.from(r)
     if (r instanceof ArrayBuffer) return Buffer.from(r)
     const d = r.data
+    if (Buffer.isBuffer(d)) return d
     return typeof d === 'string' ? Buffer.from(d) : Buffer.from(d)
   }
 

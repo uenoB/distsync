@@ -14,6 +14,7 @@ program.option('-r, --remote <url>', 'URL of remote directory')
 program.option('-n, --dry-run', 'disable uploading files')
 program.option('-q, --quiet', 'disable progress output')
 program.option('-d, --debug', 'print debug information')
+program.argument('[args...]', 'source directories (default: dist)')
 
 const options = program.parse(process.argv).opts()
 
