@@ -3,6 +3,7 @@ import * as fs from 'node:fs'
 import { program } from 'commander'
 import debug from 'debug'
 import pc from 'picocolors'
+// eslint-disable-next-line import/no-unresolved
 import { distsync } from '../dist/index.js'
 
 const packageJson = JSON.parse(

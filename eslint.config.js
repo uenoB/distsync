@@ -3,15 +3,23 @@ import eslintTs from 'typescript-eslint'
 import eslintNode from 'eslint-plugin-n'
 import eslintPromise from 'eslint-plugin-promise'
 import eslintImport from 'eslint-plugin-import'
-import { fixupPluginRules } from '@eslint/compat'
 
 export default [
-  { ignores: ['**/dist/**/*', 'packages/vite-plugin-minissg/client.d.ts'] },
+  { ignores: ['**/dist/**/*'] },
   { linterOptions: { reportUnusedDisableDirectives: true } },
   eslintJs.configs.recommended,
   eslintNode.configs['flat/recommended-module'],
   eslintPromise.configs['flat/recommended'],
-  { plugins: { import: fixupPluginRules(eslintImport) } },
+  eslintImport.flatConfigs.recommended,
+  {
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module'
+    },
+    settings: {
+      'import/resolver': 'typescript'
+    }
+  },
   {
     // derived from StandardJS
     rules: {
