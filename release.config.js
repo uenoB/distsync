@@ -8,6 +8,9 @@ export default {
     '@semantic-release/release-notes-generator',
     '@semantic-release/npm',
     ['@semantic-release/git', { assets: 'package.json' }],
-    ['@semantic-release/github', { successComment: false, failComment: false }]
+    [
+      '@semantic-release/github',
+      { successCommentCondition: false, failCommentCondition: false }
+    ]
   ]
 }
